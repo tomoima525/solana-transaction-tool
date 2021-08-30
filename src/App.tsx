@@ -1,26 +1,54 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { FC } from "react";
+import { createTheme, ThemeProvider } from "@material-ui/core";
+import { deepPurple, pink } from "@material-ui/core/colors";
+import { SnackbarProvider } from "notistack";
+import "./App.css";
+import Wallet from "./components/Wallet";
+import NavigationBar from "./components/NavigationBar";
+import Home from "./screens/Home";
 
-function App() {
+const theme = createTheme({
+  palette: {
+    type: "dark",
+    primary: {
+      main: deepPurple[700],
+    },
+    secondary: {
+      main: pink[700],
+    },
+  },
+  overrides: {
+    MuiButtonBase: {
+      root: {
+        justifyContent: "flex-start",
+      },
+    },
+    MuiButton: {
+      root: {
+        textTransform: undefined,
+        padding: "12px 16px",
+      },
+      startIcon: {
+        marginRight: 8,
+      },
+      endIcon: {
+        marginLeft: 8,
+      },
+    },
+  },
+});
+
+const App: FC = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <SnackbarProvider>
+        <Wallet>
+          <NavigationBar />
+          <Home />
+        </Wallet>
+      </SnackbarProvider>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
