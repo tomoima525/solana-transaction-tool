@@ -97,3 +97,5 @@ const signature = await connection.sendRawTransaction(
 ```
 await connection.confirmTransaction(signature, "confirmed");
 ```
+
+P.S. If you think this code was useful, tip me some SOL!  `6i6zaZdsV9R7JZKFAMNULCdMtzQCSK7ukUpdL4CdPy74`
