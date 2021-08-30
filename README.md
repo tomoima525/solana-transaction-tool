@@ -1,46 +1,99 @@
-# Getting Started with Create React App
+# Solana Transaction Tool
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- This React Application showcases the usage of [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter) and [Solana web3](https://github.com/solana-labs/solana-web3.js)
+  - Connect to Phantom Wallet
+  - Show transactions of a connected account
+  - Send lamports through the application using Phantom Wallet
 
-## Available Scripts
 
-In the project directory, you can run:
 
-### `yarn start`
+https://user-images.githubusercontent.com/6277118/131388004-f6423aa3-72ef-404e-85ce-de67dff85ae0.mov
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+# Prerequisite
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Install Phantom Wallet and set your account 
 
-### `yarn test`
+# How to run
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+$ yarn install
+$ yarn start
+```
 
-### `yarn build`
+By default this app points to "devnet". If you want to point it to the different network, update [clusterApiUrl](https://github.com/tomoima525/solana-transaction-tool/blob/main/src/screens/Home.tsx#L23)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# How does it work?
+### Connecting Wallet
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- [WalletProvider](https://github.com/tomoima525/solana-transaction-tool/blob/main/src/components/Wallet.tsx#L32-L33) automatically requrests the access to your Wallet
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
+    <WalletProvider wallets={[PhantomWallet]} onError={onError} autoConnect>
+      <WalletDialogProvider>{children}</WalletDialogProvider>
+    </WalletProvider>
+```
 
-### `yarn eject`
+- Once that succeeds, you can access your wallet through [useWallet](https://github.com/tomoima525/solana-transaction-tool/blob/main/src/screens/Home.tsx#L26) hooks 
+- `useWallet` provides wallet information(publicKey, icon) and functionality to sign your transaction
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Viewing transactions
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- You need to fetch transaction signatures using [web3.Connection](https://github.com/tomoima525/solana-transaction-tool/blob/main/src/web3/transaction.ts#L11)
+- We can retrieve transactions using that signatures
+```
+  const transSignatures = await connection.getConfirmedSignaturesForAddress2(
+    address
+  );
+  for (let i = 0; i < transSignatures.length; i++) {
+    const signature = transSignatures[i].signature;
+    const confirmedTransaction = await connection.getConfirmedTransaction(
+      signature
+    );
+    if (confirmedTransaction) {
+      const transWithSignature = {
+        signature,
+        confirmedTransaction,
+      };
+      transactions.push(transWithSignature);
+    }
+  }
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Sending transactions
+- First create `instruction`.
+```
+    const instruction = SystemProgram.transfer({
+      fromPubkey: address!,
+      toPubkey: destPubkey,
+      lamports,
+    });
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- Create a `transaction` with `feePayer`(usually yourself), `recentBlockHash`(this ensures that this transaction is legit) and `instruction`
 
-## Learn More
+```
+  const recentBlockhash = await connection.getRecentBlockhash();
+  console.log({ recentBlockhash });
+  const options: TransactionCtorFields = {
+    feePayer,
+    recentBlockhash: recentBlockhash.blockhash,
+  };
+  const transaction = new Transaction(options);
+  transaction.add(instruction);
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Sign your `transaction` and send it to the network
+```
+const { signTransaction } = useWallet();
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+const signedTrans = await signTransaction(transaction);
+const signature = await connection.sendRawTransaction(
+    signedTrans.serialize()
+);
+```
+
+- Finally confirm your transaction
+
+```
+await connection.confirmTransaction(signature, "confirmed");
+```
