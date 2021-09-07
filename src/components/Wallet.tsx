@@ -14,7 +14,7 @@ interface WalletProps {
 const Wallet: FC<WalletProps> = (props: WalletProps) => {
   const { children } = props;
   const { enqueueSnackbar } = useSnackbar();
-  const PhantomWallet = {
+  const PhantomWallet: any = {
     name: "Phantom",
     url: "https://www.phantom.app",
     icon: `${ICONS_URL}/phantom.svg`,
